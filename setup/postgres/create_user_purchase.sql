@@ -11,5 +11,5 @@ CREATE TABLE retail.user_purchase (
     country varchar(20)
 );
 
-COPY retail.user_purchase(invoice_number,stock_code,detail,quantity,invoice_date,unit_price,custome_id,country) 
+COPY retail.user_purchase(invoice_number,stock_code,detail,quantity,invoice_date,unit_price,customer_id,country) 
 FROM '/data/retail/OnlineRetail.csv' DELIMITER ','  CSV HEADER;
