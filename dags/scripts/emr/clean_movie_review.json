@@ -1,0 +1,37 @@
+[
+  {
+    "Name": "Move raw data from S3 to HDFS",
+    "ActionOnFailure": "CANCEL_AND_WAIT",
+    "HadoopJarStep": {
+      "Jar": "command-runner.jar",
+      "Args": [
+        "s3-dist-cp",
+        "--src=s3://{{ params.BUCKET_NAME }}/{{ params.movie_review_load }}",
+        "--dest=/movie"
+      ]
+    }
+  },
+  {
+    "Name": "Classify movie reviews",
+    "ActionOnFailure": "CANCEL_AND_WAIT",
+    "HadoopJarStep": {
+      "Jar": "command-runner.jar",
+      "Args": [
+        "spark-submit",
+        "s3://{{ params.BUCKET_NAME }}/scripts/random_text_classification.py"
+      ]
+    }
+  },
+  {
+    "Name": "Move raw data from S3 to HDFS",
+    "ActionOnFailure": "CANCEL_AND_WAIT",
+    "HadoopJarStep": {
+      "Jar": "command-runner.jar",
+      "Args": [
+        "s3-dist-cp",
+        "--src=/output",
+        "--dest=s3://{{ params.BUCKET_NAME }}/{{ params.movie_review_stage }}"
+      ]
+    }
+  }
+]
