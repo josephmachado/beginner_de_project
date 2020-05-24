@@ -21,7 +21,7 @@ By the end of the setup you should have(or know how to get)
 
 ## Design
 
-[Engineering Design](assets/images/eng_spec.png)
+![Engineering Design](assets/images/eng_spec.png)
 
 ## Setup and run
 
