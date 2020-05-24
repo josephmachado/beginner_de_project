@@ -23,6 +23,10 @@ By the end of the setup you should have(or know how to get)
 
 ![Engineering Design](assets/images/eng_spec.png)
 
+## Data
+
+Data is available at [data](https://www.dropbox.com/sh/amdyc6z8744hrl5/AAC2Fnbzb_nLhdT2nGjL7-7ta?dl=0).Place this folder within the `setup` folder as such `setup/raw_input_data/`
+
 ## Setup and run
 
 ### local
