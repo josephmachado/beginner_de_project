@@ -63,7 +63,7 @@ Create a new connection as shown below for your 'redshift'
 ![Airflow Redshift Connection](assets/images/airflow_rs_1.png)
 ![Airflow Redshift Connection](assets/images/airflow_rs_2.png)
 
-### EMR
+### AWS EMR
 
 Get your EMR ID from the EMR UI, then in `dags/user_behaviour.py` fill out your `BUCKET_NAME` and `EMR_ID`.
 
