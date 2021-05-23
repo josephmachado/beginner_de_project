@@ -6,8 +6,8 @@
       "Jar": "command-runner.jar",
       "Args": [
         "s3-dist-cp",
-        "--src=s3://{{ params.BUCKET_NAME }}/{{ params.movie_review_load }}",
-        "--dest=/movie"
+        "--src=s3://{{ params.BUCKET_NAME }}/{{ params.raw_movie_review }}/{{ ds }}/",
+        "--dest=/movie/{{ ds }}"
       ]
     }
   },
@@ -18,19 +18,21 @@
       "Jar": "command-runner.jar",
       "Args": [
         "spark-submit",
-        "s3://{{ params.BUCKET_NAME }}/scripts/random_text_classification.py"
+        "s3://{{ params.BUCKET_NAME }}/scripts/random_text_classification.py",
+        "--input=/movie/{{ ds }}",
+        "--run-id={{ ds }}"
       ]
     }
   },
   {
-    "Name": "Move raw data from S3 to HDFS",
+    "Name": "Move classified data from HDFS to S3",
     "ActionOnFailure": "CANCEL_AND_WAIT",
     "HadoopJarStep": {
       "Jar": "command-runner.jar",
       "Args": [
         "s3-dist-cp",
         "--src=/output",
-        "--dest=s3://{{ params.BUCKET_NAME }}/{{ params.movie_review_stage }}"
+        "--dest=s3://{{ params.BUCKET_NAME }}/{{ params.stage_movie_review }}/{{ ds }}"
       ]
     }
   }
