@@ -1,79 +1,91 @@
 # Beginner DE Project - Batch Edition
 
-If you are interested in step by step explanation and review, check out the post for this repo at
+If you are interested in step by step explanation and design review, check out the post for this repo at
 [project-for-beginners-batch-edition](https://www.startdataengineering.com/post/data-engineering-project-for-beginners-batch-edition)
 
-## Prereq
+- [Beginner DE Project - Batch Edition](#beginner-de-project---batch-edition)
+  - [1. Introduction](#1-introduction)
+  - [2. Objective](#2-objective)
+  - [3. Design](#3-design)
+  - [4. Setup](#4-setup)
+    - [4.1 Prerequisite](#41-prerequisite)
+  - [5. Stop](#5-stop)
+  - [6. Contributing](#6-contributing)
 
-1. [docker](https://docs.docker.com/get-docker/) (also make sure you have `docker-compose`) we will use this to run Airflow locally
-2. [pgcli](https://github.com/dbcli/pgcli) to connect to our databases(postgres and Redshift)
-3. [AWS account](https://aws.amazon.com/) to set up our cloud components
-4. [AWS Components](https://www.dropbox.com/s/ql8wxqjjcv42065/aws-components-setup.pdf?dl=0) to start the required services
+## 1. Introduction
 
-By the end of the setup you should have(or know how to get)
+A real data engineering project usually involves multiple components. Setting up a data engineering project, while conforming to best practices can be extremely time-consuming. If you are
 
-1. `aws cli` configured with keys and region
-2. `pem or ppk` file saved locally with correct permissions
-3. `ARN` from your `iam` role for Redshift
-4. `S3` bucket
-5. `EMR ID` from the summary page
-6. `Redshift` host, port, database, username, password
+> A data analyst, student, scientist, or engineer looking to gain data engineering experience, but is unable to find a good starter project.
 
-## Design
+> Wanting to work on a data engineering project that simulates a real-life project.
 
-![Engineering Design](assets/images/eng_spec.png)
+> Looking for an end-to-end data engineering project.
 
-## Data
+> Looking for a good project to get data engineering experience for job interviews.
 
-Data is available at [data](https://www.dropbox.com/sh/amdyc6z8744hrl5/AAC2Fnbzb_nLhdT2nGjL7-7ta?dl=0).Place this folder within the `setup` folder as such `setup/raw_input_data/`
+Then this tutorial is for you. In this tutorial, you will
 
-## Setup and run
+1. Setup Apache Airflow, AWS EMR, AWS Redshift, AWS Spectrum, and AWS S3.
 
-### local
+2. Learn data pipeline best practices.
 
-In you local terminal type within your project base directory
+3. Learn how to spot failure points in a data pipeline and build systems resistant to failures.
+
+4. Learn how to design and build a data pipeline from business requirements.
+
+## 2. Objective
+
+Let's assume that you work for a user behavior analytics company that collects user data and creates a user profile. We are tasked with building a data pipeline to populate the `user_behavior_metric` table. The `user_behavior_metric` table is an OLAP table, meant to be used by analysts, dashboard software, etc. It is built from
+
+1. `user_purchase`: OLTP table with user purchase information.
+2. `movie_review.csv`: Data sent every day by an external data vendor.
+
+![Data pipeline objective](assets/images/de_proj_obj.png)
+
+## 3. Design
+
+We will be using Airflow to orchestrate
+
+1. Classifying movie reviews with Apache Spark.
+2. Loading the classified movie reviews into the data warehouse.
+3. Extracting user purchase data from an OLTP database and loading it into the data warehouse.
+4. Joining the classified movie review data and user purchase data to get `user behavior metric` data.
+
+![Data pipeline design](assets/images/de_proj_design.png)
+
+## 4. Setup
+
+### 4.1 Prerequisite
+
+1. [Docker](https://docs.docker.com/engine/install/) with at least 4GB of RAM and [Docker Compose](https://docs.docker.com/compose/install/) v1.27.0 or later
+2. [psql](https://blog.timescale.com/tutorials/how-to-install-psql-on-mac-ubuntu-debian-windows/)
+3. [AWS account](https://aws.amazon.com/)
+4. [AWS CLI installed](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html) and [configured](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html)
+
+To set up the infrastructure and base tables we have a script called `setup_infra.sh`. This can be run as shown below.
 
 ```bash
-docker-compose -f docker-compose-LocalExecutor.yml up -d
+git clone https://github.com/josephmachado/beginner_de_project.git
+cd beginner_de_project
+./setup_infra.sh {your-bucket-name}
 ```
 
-Then wait a couple seconds and sign into the Airflow `postgres` metadata database(since our data is small we pretend that our metadata database is also our OLTP datastore)
+This sets up the following components
+![Data pipeline infra](assets/images/de_proj_infra.png)
+
+log on to [www.localhost:8080](http://localhost:8080) to see the Airflow UI. The username and password are both `airflow`.
+
+## 5. Stop
+
+When you are done, do not forget to turn off your instances. In your terminal run
 
 ```bash
-pgcli -h localhost -p 5432 -U airflow
+./spindown_infra.sh {your-bucket-name}
 ```
 
-and run the script at `setup/postgres/create_user_purchase.sql`.
+To stop all your AWS services and local docker containers.
 
-### Redshift
+## 6. Contributing
 
-Get the redshift cluster connection details and make sure you have a spectrum IAM role associated with it(as shown in [AWS Components](https://www.dropbox.com/s/ql8wxqjjcv42065/aws-components-setup.pdf?dl=0) )
-log into redshift using `pgcli`
-
-```bash
-pgcli -h <your-redshift-host> -p 5439 -d <your-database> -U <your-redshift-user>
-# type password when prompted
-```
-
-In the redshift connection run the script at `setup/redshift/create_external_schema.sql`, after replacing it with your `iam` role ARN and s3 bucket.
-
-log on to [www.localhost:8080](http://localhost:8080) to see the Airflow UI
-Create a new connection as shown below for your 'redshift'
-
-![Airflow Redshift Connection](assets/images/airflow_rs_1.png)
-![Airflow Redshift Connection](assets/images/airflow_rs_2.png)
-
-### EMR
-
-Get your EMR ID from the EMR UI, then in `dags/user_behaviour.py` fill out your `BUCKET_NAME` and `EMR_ID`.
-
-switch on your `DAG`, after running successfully, verify the presence of data in redshift using
-`select * from  public.user_behavior_metric limit 10;`.
-
-## Stop
-
-From your AWS console, stop the redshift cluster and EMR cluster
-In you local terminal type within your project base directory
-```bash
-docker-compose -f docker-compose-LocalExecutor.yml down
-```
+Contributions are welcome. If you would like to contribute you can help by opening a github issue or putting up a PR.

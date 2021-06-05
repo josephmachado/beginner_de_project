@@ -12,4 +12,4 @@ CREATE TABLE retail.user_purchase (
 );
 
 COPY retail.user_purchase(invoice_number,stock_code,detail,quantity,invoice_date,unit_price,customer_id,country) 
-FROM '/data/retail/OnlineRetail.csv' DELIMITER ','  CSV HEADER;
+FROM '/input_data/OnlineRetail.csv' DELIMITER ','  CSV HEADER;

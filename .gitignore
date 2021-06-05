@@ -25,5 +25,16 @@ sftp-config.json
 # Python
 __pycache__
 
-# datasets
-*raw_input_data*
+# policy
+trust-policy.json
+
+# data
+data*
+
+# logs
+logs/*
+*.log
+
+temp/*
+
+__MACOSX
