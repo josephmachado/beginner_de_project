@@ -68,7 +68,7 @@ To set up the infrastructure and base tables we have a script called `setup_infr
 ```bash
 git clone https://github.com/josephmachado/beginner_de_project.git
 cd beginner_de_project
-./setup_infra.sh {your-bucket-name}
+./setup_infra.sh {your-bucket-name} {your-region}
 ```
 
 This sets up the following components
