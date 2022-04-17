@@ -1,7 +1,7 @@
 #!/bin/bash
 
-if [[ $# -eq 0 ]] ; then
-    echo 'Please enter your bucket name as ./setup_infra.sh your-bucket'
+if [[ $# != 2 ]] ; then
+    echo 'Please enter your bucket name & region name as ./setup_infra.sh your-bucket your-region'
     exit 0
 fi
 
@@ -22,8 +22,8 @@ REDSHIFT_PASSWORD=sdeP0ssword0987
 REDSHIFT_PORT=5439
 EMR_NODE_TYPE=m4.xlarge
 
-echo "Creating bucket "$1""
-aws s3api create-bucket --acl public-read-write --bucket $1 --output text >> setup.log
+echo "Creating bucket "$1" in region "$2""
+aws s3api create-bucket --acl public-read-write --bucket $1 --region $AWS_REGION --create-bucket-configuration LocationConstraint=$2 --output text >> setup.log
 
 echo "Clean up stale local data"
 rm -f data.zip
