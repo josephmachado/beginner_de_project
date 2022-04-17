@@ -159,20 +159,20 @@ psql -f ./redshift_setup.sql postgres://$REDSHIFT_USER:$REDSHIFT_PASSWORD@$REDSH
 rm ./redshift_setup.sql
 
 echo "adding redshift connections to Airflow connection param"
-docker exec -d beginner_de_project_airflow-webserver_1 airflow connections add 'redshift' --conn-type 'Postgres' --conn-login $REDSHIFT_USER --conn-password $REDSHIFT_PASSWORD --conn-host $REDSHIFT_HOST --conn-port $REDSHIFT_PORT --conn-schema 'dev'
-docker exec -d beginner_de_project_airflow-webserver_1 airflow connections add 'postgres_default' --conn-type 'Postgres' --conn-login 'airflow' --conn-password 'airflow' --conn-host 'localhost' --conn-port 5432 --conn-schema 'airflow'
+docker exec -d beginner_de_project_airflow-webserver-1 airflow connections add 'redshift' --conn-type 'Postgres' --conn-login $REDSHIFT_USER --conn-password $REDSHIFT_PASSWORD --conn-host $REDSHIFT_HOST --conn-port $REDSHIFT_PORT --conn-schema 'dev'
+docker exec -d beginner_de_project_airflow-webserver-1 airflow connections add 'postgres_default' --conn-type 'Postgres' --conn-login 'airflow' --conn-password 'airflow' --conn-host 'localhost' --conn-port 5432 --conn-schema 'airflow'
 
 echo "adding S3 bucket name to Airflow variables"
-docker exec -d beginner_de_project_airflow-webserver_1 airflow variables set BUCKET $1
+docker exec -d beginner_de_project_airflow-webserver-1 airflow variables set BUCKET $1
 
 echo "adding EMR ID to Airflow variables"
 EMR_CLUSTER_ID=$(aws emr list-clusters --active --query 'Clusters[?Name==`'$SERVICE_NAME'`].Id' --output text)
-docker exec -d beginner_de_project_airflow-webserver_1 airflow variables set EMR_ID $EMR_CLUSTER_ID
+docker exec -d beginner_de_project_airflow-webserver-1 airflow variables set EMR_ID $EMR_CLUSTER_ID
 
 echo "Setting up AWS access for Airflow workers"
 AWS_ID=$(aws configure get aws_access_key_id)
 AWS_SECRET_KEY=$(aws configure get aws_secret_access_key)
 AWS_REGION=$(aws configure get region)
-docker exec -d beginner_de_project_airflow-webserver_1 airflow connections add 'aws_default' --conn-type 'aws' --conn-login $AWS_ID --conn-password $AWS_SECRET_KEY --conn-extra '{"region_name":"'$AWS_REGION'"}'
+docker exec -d beginner_de_project_airflow-webserver-1 airflow connections add 'aws_default' --conn-type 'aws' --conn-login $AWS_ID --conn-password $AWS_SECRET_KEY --conn-extra '{"region_name":"'$AWS_REGION'"}'
 
 echo "Successfully setup local Airflow containers, S3 bucket "$1", EMR Cluster "$SERVICE_NAME", redshift cluster "$SERVICE_NAME", and added config to Airflow connections and variables"
