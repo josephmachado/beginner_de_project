@@ -5,42 +5,112 @@ if [[ $# -eq 0 ]] ; then
     exit 0
 fi
 
-# Check if docker is running; ref: https://stackoverflow.com/questions/43721513/how-to-check-if-the-docker-engine-and-a-docker-container-are-running
-if ! docker info >/dev/null 2>&1; then
-    echo "Docker does not seem to be running, run it first and retry"
-    exit 1
-fi
+# check if AWS is installed and configured
+# check if psql is installed
 
 AWS_ID=$(aws sts get-caller-identity --query Account --output text | cat)
-AWS_REGION=$(aws configure get region)
+AWS_EC2_INSTANCE_NAME=sde-airflow-pg-$(openssl rand -base64 12)
 
-SERVICE_NAME=sde-batch-de-project
-IAM_ROLE_NAME=sde-spectrum-redshift
-
-REDSHIFT_USER=sde_user
-REDSHIFT_PASSWORD=sdeP0ssword0987
-REDSHIFT_PORT=5439
-EMR_NODE_TYPE=m4.xlarge
+echo "Reading infrastructure variables from infra_variables.txt"
+source infra_variables.txt
 
 echo "Creating bucket "$1""
 aws s3api create-bucket --acl public-read-write --bucket $1 --output text >> setup.log
 
-echo "Clean up stale local data"
-rm -f data.zip
-rm -rf data
-echo "Download data"
-aws s3 cp s3://start-data-engg/data.zip ./
-unzip data.zip
+echo '{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}' > ./trust-policy.json
 
-echo "Spinning up local Airflow infrastructure"
-rm -rf logs
-mkdir logs
-rm -rf temp
-mkdir temp
-docker compose up airflow-init
-docker compose up -d
-echo "Sleeping 5 Minutes to let Airflow containers reach a healthy state"
-sleep 300
+
+echo "Creating AWS IAM role for EC2 S3 access"
+aws iam create-role --role-name $EC2_IAM_ROLE --assume-role-policy-document file://trust-policy.json --description 'EC2 access to S3' --output text >> setup.log
+
+echo "Attaching AmazonS3FullAccess Policy to the previous IAM role"
+aws iam attach-role-policy --role-name $EC2_IAM_ROLE --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess --output text >> setup.log
+
+echo "Attaching AmazonEMRFullAccessPolicy_v2 Policy to the previous IAM role"
+aws iam attach-role-policy --role-name $EC2_IAM_ROLE --policy-arn arn:aws:iam::aws:policy/AmazonEMRFullAccessPolicy_v2 --output text >> setup.log
+
+echo "Attaching AmazonRedshiftAllCommandsFullAccess Policy to the previous IAM role"
+aws iam attach-role-policy --role-name $EC2_IAM_ROLE --policy-arn arn:aws:iam::aws:policy/AmazonRedshiftAllCommandsFullAccess --output text >> setup.log
+
+echo 'Creating IAM instance profile to add to EC2'
+aws iam create-instance-profile --instance-profile-name $EC2_IAM_ROLE-instance-profile --output text >> setup.log
+aws iam add-role-to-instance-profile --role-name $EC2_IAM_ROLE --instance-profile-name $EC2_IAM_ROLE-instance-profile --output text >> setup.log
+
+echo "Creating ssh key to connect to EC2 instance"
+aws ec2 create-key-pair --key-name sde-key --query "KeyMaterial" --output text --region $AWS_REGION > sde-key.pem
+chmod 400 sde-key.pem
+
+MY_IP=$(curl -s http://whatismyip.akamai.com/)
+
+echo "Creating EC2 security group to only allow access from your IP $MY_IP"
+EC2_SECURITY_GROUP_ID=$(aws ec2 create-security-group --description "Security group to allow inbound SCP connection" --group-name $EC2_SECURITY_GROUP --output text)
+echo 'EC2_SECURITY_GROUP_ID="'$EC2_SECURITY_GROUP_ID'"' >> state.log
+
+echo "Add inbound rule to allow ssh from IP $MY_IP"
+aws ec2 authorize-security-group-ingress --group-id $EC2_SECURITY_GROUP_ID --protocol tcp --port 22 --cidr $MY_IP/24 --output text >> setup.log
+
+echo "Add outbound rule to allow our IP $MY_IP to connect to EC2's 8080 port"
+aws ec2 authorize-security-group-egress --group-id $EC2_SECURITY_GROUP_ID --protocol tcp --port 8080 --cidr $MY_IP/32 --output text >> setup.log
+
+echo "Creating EC2 instance"
+sleep 5
+aws ec2 run-instances --image-id $EC2_IMAGE_ID --instance-type $AWS_EC2_INSTANCE --count 1 --key-name sde-key --user-data file://setup_ubuntu_docker.txt --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value='$AWS_EC2_INSTANCE_NAME'}]' --region $AWS_REGION >> setup.log
+
+echo "Get EC2 ID"
+sleep 20
+EC2_ID=$(aws --region $AWS_REGION ec2 describe-instances --filters "Name=instance-state-name,Values=running" "Name=tag:Name,Values=$AWS_EC2_INSTANCE_NAME" --query 'Reservations[*].Instances[*].[InstanceId]' --output text)
+echo "EC2 ID is $EC2_ID"
+echo 'EC2_ID="'$EC2_ID'"' >> state.log
+
+echo "Add security group to EC2"
+aws ec2 modify-instance-attribute --instance-id $EC2_ID --groups $EC2_SECURITY_GROUP_ID --output text >> setup.log
+
+while :
+do
+   echo "Waiting for EC2 instance to start, sleeping for 60s before next check"
+   sleep 60
+   EC2_STATUS=$(aws ec2 describe-instance-status --instance-ids $EC2_ID --query 'InstanceStatuses[0].InstanceState.Name' --output text)
+   if [[ "$EC2_STATUS" == "running" ]]
+   then
+	break
+   fi
+done
+
+echo "Attach "$EC2_IAM_ROLE"-instance-profile to EC2 instance"
+aws ec2 associate-iam-instance-profile --instance-id $EC2_ID --iam-instance-profile Name=$EC2_IAM_ROLE-instance-profile --output text >> setup.log
+
+echo "Get EC2 IPV4"
+sleep 20
+EC2_IPV4=$(aws --region $AWS_REGION ec2 describe-instances --filters "Name=instance-state-name,Values=running" "Name=instance-id,Values=$EC2_ID" --query 'Reservations[*].Instances[*].[PublicDnsName]' --output text)
+echo "EC2 IPV4 is $EC2_IPV4"
+
+echo "SCP to copy code to remote server"
+cd ../
+scp -o "IdentitiesOnly yes" -i ./beginner_de_project/sde-key.pem -r ./beginner_de_project ubuntu@$EC2_IPV4:/home/ubuntu/beginner_de_project
+cd beginner_de_project
+
+echo "Clean up stale data"
+sleep 10
+ssh -o "IdentitiesOnly yes" -i "sde-key.pem" ubuntu@$EC2_IPV4 'cd beginner_de_project && rm -f data.zip && rm -rf data'
+
+echo "Download data"
+sleep 10
+ssh -o "IdentitiesOnly yes" -i "sde-key.pem" ubuntu@$EC2_IPV4 'cd beginner_de_project && wget https://start-data-engg.s3.amazonaws.com/data.zip && sudo unzip data.zip && sudo chmod 755 data'
+
+echo "Recreate logs and temp dir"
+sleep 10
+ssh -o "IdentitiesOnly yes" -i "sde-key.pem" ubuntu@$EC2_IPV4 'cd beginner_de_project && rm -rf logs && mkdir logs && rm -rf temp && mkdir temp && chmod 777 temp'
 
 echo "Creating an AWS EMR Cluster named "$SERVICE_NAME""
 aws emr create-default-roles >> setup.log
@@ -96,7 +166,7 @@ echo '{
 }' > ./trust-policy.json
 
 
-echo "Creating AWS IAM role"
+echo "Creating AWS IAM role for redshift spectrum S3 access"
 aws iam create-role --role-name $IAM_ROLE_NAME --assume-role-policy-document file://trust-policy.json --description 'spectrum access for redshift' >> setup.log
 
 echo "Attaching AmazonS3ReadOnlyAccess Policy to our IAM role"
@@ -158,21 +228,35 @@ CREATE TABLE public.user_behavior_metric (
 psql -f ./redshift_setup.sql postgres://$REDSHIFT_USER:$REDSHIFT_PASSWORD@$REDSHIFT_HOST:$REDSHIFT_PORT/dev
 rm ./redshift_setup.sql
 
+echo "Spinning up remote Airflow docker containers"
+sleep 60
+ssh -o "IdentitiesOnly yes" -i "sde-key.pem" ubuntu@$EC2_IPV4 'cd beginner_de_project && echo -e "AIRFLOW_UID=$(id -u)\nAIRFLOW_GID=0" > .env && docker compose up airflow-init && docker compose up --build -d'
+
+echo "Sleeping 5 Minutes to let Airflow containers reach a healthy state"
+sleep 300
+
 echo "adding redshift connections to Airflow connection param"
-docker exec -d beginner_de_project_airflow-webserver-1 airflow connections add 'redshift' --conn-type 'Postgres' --conn-login $REDSHIFT_USER --conn-password $REDSHIFT_PASSWORD --conn-host $REDSHIFT_HOST --conn-port $REDSHIFT_PORT --conn-schema 'dev'
-docker exec -d beginner_de_project_airflow-webserver-1 airflow connections add 'postgres_default' --conn-type 'Postgres' --conn-login 'airflow' --conn-password 'airflow' --conn-host 'localhost' --conn-port 5432 --conn-schema 'airflow'
+ssh -o "IdentitiesOnly yes" -i "sde-key.pem" ubuntu@$EC2_IPV4 "docker exec -d webserver airflow connections add 'redshift' --conn-type 'Postgres' --conn-login $REDSHIFT_USER --conn-password $REDSHIFT_PASSWORD --conn-host $REDSHIFT_HOST --conn-port $REDSHIFT_PORT --conn-schema 'dev'"
+
+echo "adding postgres connections to Airflow connection param"
+ssh -o "IdentitiesOnly yes" -i "sde-key.pem" ubuntu@$EC2_IPV4 "docker exec -d webserver airflow connections add 'postgres_default' --conn-type 'Postgres' --conn-login 'airflow' --conn-password 'airflow' --conn-host 'localhost' --conn-port 5432 --conn-schema 'airflow'"
 
 echo "adding S3 bucket name to Airflow variables"
-docker exec -d beginner_de_project_airflow-webserver-1 airflow variables set BUCKET $1
+ssh -o "IdentitiesOnly yes" -i "sde-key.pem" ubuntu@$EC2_IPV4 "docker exec -d webserver airflow variables set BUCKET $1"
 
 echo "adding EMR ID to Airflow variables"
 EMR_CLUSTER_ID=$(aws emr list-clusters --active --query 'Clusters[?Name==`'$SERVICE_NAME'`].Id' --output text)
-docker exec -d beginner_de_project_airflow-webserver-1 airflow variables set EMR_ID $EMR_CLUSTER_ID
+ssh -o "IdentitiesOnly yes" -i "sde-key.pem" ubuntu@$EC2_IPV4 "docker exec -d webserver airflow variables set EMR_ID $EMR_CLUSTER_ID"
 
-echo "Setting up AWS access for Airflow workers"
-AWS_ID=$(aws configure get aws_access_key_id)
-AWS_SECRET_KEY=$(aws configure get aws_secret_access_key)
-AWS_REGION=$(aws configure get region)
-docker exec -d beginner_de_project_airflow-webserver-1 airflow connections add 'aws_default' --conn-type 'aws' --conn-login $AWS_ID --conn-password $AWS_SECRET_KEY --conn-extra '{"region_name":"'$AWS_REGION'"}'
+echo "set Airflow AWS region to "$AWS_REGION""
+ssh -o "IdentitiesOnly yes" -i "sde-key.pem" ubuntu@$EC2_IPV4 "docker exec -d webserver airflow connections add 'aws_default' --conn-type 'aws' --conn-extra '{\"region_name\":\"'$AWS_REGION'\"}'"
 
 echo "Successfully setup local Airflow containers, S3 bucket "$1", EMR Cluster "$SERVICE_NAME", redshift cluster "$SERVICE_NAME", and added config to Airflow connections and variables"
+
+echo "Forwardin Metabase port to http://localhost:3000"
+ssh -o "IdentitiesOnly yes" -i "sde-key.pem" ubuntu@$EC2_IPV4 -N -f -L 3000:$EC2_IPV4:3000
+
+echo "Opening Airflow UI ..."
+sleep 60
+ssh -o "IdentitiesOnly yes" -i "sde-key.pem" ubuntu@$EC2_IPV4 -N -f -L 8080:$EC2_IPV4:8080
+open http://localhost:8080

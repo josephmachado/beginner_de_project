@@ -1,91 +1,113 @@
 # Beginner DE Project - Batch Edition
 
-If you are interested in step by step explanation and design review, check out the post for this repo at
-[project-for-beginners-batch-edition](https://www.startdataengineering.com/post/data-engineering-project-for-beginners-batch-edition)
+### See detailed explanation at [Data engineering project: Batch edition](https://www.startdataengineering.com/post/data-engineering-project-for-beginners-batch-edition)
 
 - [Beginner DE Project - Batch Edition](#beginner-de-project---batch-edition)
-  - [1. Introduction](#1-introduction)
-  - [2. Objective](#2-objective)
-  - [3. Design](#3-design)
-  - [4. Setup](#4-setup)
-    - [4.1 Prerequisite](#41-prerequisite)
-  - [5. Stop](#5-stop)
-  - [6. Contributing](#6-contributing)
+    - [See detailed explanation at Data engineering project: Batch edition](#see-detailed-explanation-at-data-engineering-project-batch-edition)
+  - [Design](#design)
+  - [Setup](#setup)
+    - [Prerequisite](#prerequisite)
+    - [Local run](#local-run)
+    - [Deploy to AWS](#deploy-to-aws)
+  - [Stop](#stop)
+  - [Contributing](#contributing)
 
-## 1. Introduction
-
-A real data engineering project usually involves multiple components. Setting up a data engineering project, while conforming to best practices can be extremely time-consuming. If you are
-
-> A data analyst, student, scientist, or engineer looking to gain data engineering experience, but is unable to find a good starter project.
-
-> Wanting to work on a data engineering project that simulates a real-life project.
-
-> Looking for an end-to-end data engineering project.
-
-> Looking for a good project to get data engineering experience for job interviews.
-
-Then this tutorial is for you. In this tutorial, you will
-
-1. Setup Apache Airflow, AWS EMR, AWS Redshift, AWS Spectrum, and AWS S3.
-
-2. Learn data pipeline best practices.
-
-3. Learn how to spot failure points in a data pipeline and build systems resistant to failures.
-
-4. Learn how to design and build a data pipeline from business requirements.
-
-## 2. Objective
-
-Let's assume that you work for a user behavior analytics company that collects user data and creates a user profile. We are tasked with building a data pipeline to populate the `user_behavior_metric` table. The `user_behavior_metric` table is an OLAP table, meant to be used by analysts, dashboard software, etc. It is built from
-
-1. `user_purchase`: OLTP table with user purchase information.
-2. `movie_review.csv`: Data sent every day by an external data vendor.
-
-![Data pipeline objective](assets/images/de_proj_obj.png)
-
-## 3. Design
+## Design
 
 We will be using Airflow to orchestrate
 
 1. Classifying movie reviews with Apache Spark.
 2. Loading the classified movie reviews into the data warehouse.
-3. Extracting user purchase data from an OLTP database and loading it into the data warehouse.
+3. Extract user purchase data from an OLTP database and load it into the data warehouse.
 4. Joining the classified movie review data and user purchase data to get `user behavior metric` data.
 
 ![Data pipeline design](assets/images/de_proj_design.png)
 
-## 4. Setup
+## Setup
 
-### 4.1 Prerequisite
+### Prerequisite
 
 1. [Docker](https://docs.docker.com/engine/install/) with at least 4GB of RAM and [Docker Compose](https://docs.docker.com/compose/install/) v1.27.0 or later
 2. [psql](https://blog.timescale.com/tutorials/how-to-install-psql-on-mac-ubuntu-debian-windows/)
 3. [AWS account](https://aws.amazon.com/)
 4. [AWS CLI installed](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html) and [configured](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html)
 
-To set up the infrastructure and base tables we have a script called `setup_infra.sh`. This can be run as shown below.
+Clone and cd into the project directory.
 
 ```bash
 git clone https://github.com/josephmachado/beginner_de_project.git
 cd beginner_de_project
-./setup_infra.sh {your-bucket-name}
 ```
 
-This sets up the following components
-![Data pipeline infra](assets/images/de_proj_infra.png)
+### Local run
 
-log on to [www.localhost:8080](http://localhost:8080) to see the Airflow UI. The username and password are both `airflow`.
+When running locally, you can use the make command to manage infrastructure. We use the following docker containers 
 
-## 5. Stop
+1. Airflow
+2. Postgres DB (as Airflow metadata DB)
+3. Metabase for data visualization
 
-When you are done, do not forget to turn off your instances. In your terminal run
+You can start the local containers as shown below.
 
 ```bash
-./spindown_infra.sh {your-bucket-name}
+make up # start all containers
+make ci # runs format checks, type checks, static checks, and tests
+make down # stops the containers
 ```
 
-To stop all your AWS services and local docker containers.
+Since we cannot replicate AWS components locally, we have not set them up here. To learn more about how to set up components locally [read this article](https://www.startdataengineering.com/post/setting-up-e2e-tests/)
 
-## 6. Contributing
+We have a dag validity test defined [here](test/dag/test_dag_validity.py).
 
-Contributions are welcome. If you would like to contribute you can help by opening a github issue or putting up a PR.
+### Deploy to AWS
+
+To set up the AWS infrastructure we have a script called `setup_infra.sh`. 
+
+**Note:** We run all of our infrastructure on AWS us-east-1. If you want to change this, please change the corresponding variables in [infra_variables.txt](infra_variables.txt).
+
+Setup can be run as shown below.
+
+```bash
+make down # since our AWS infra will be port forwarded to 8080 and 3000 which are used by local Airflow and Metabase respectively
+./setup_infra.sh {your-bucket-name} # e.g ./setup_infra.sh my-test-bucket 
+```
+
+In the prompt enter `yes` to authenticate the ssh connection.
+
+This sets up the following components
+
+1. 1 AWS EC2, running Airflow, Metabase
+2. 1 AWS EMR cluster
+3. 1 AWS Redshift cluster
+4. 1 AWS S3 bucket
+
+The command will also open Airflow running on an EC2 instance. You can also checkout
+
+1. Airflow [www.localhost:8080](http://localhost:8080) (username and password are both `airflow`)
+2. Metabase [www.localhost:3000](http://localhost:3000) 
+
+The first time you log in, create a user name and password. To establish a connection to your Redshift cluster, you will need the redshift host, which you can get using the command 
+
+```bash
+aws redshift describe-clusters --cluster-identifier sde-batch-de-project --query 'Clusters[0].Endpoint.Address' --output text
+```
+
+The port, username, and password are in [infra_vairables.txt](infra_variables.txt) and the database is `dev`. 
+
+You can create dashboards in Metabase, as seen below.
+
+![Data pipeline design](assets/images/metabase.png)
+
+## Stop
+
+When you are done, do not forget to turn off your AWS instances. In your terminal run
+
+```bash
+./tear_down_infra.sh {your-bucket-name} # e.g. ./tear_down_infra.sh my-test-bucket
+```
+
+This will stop all the AWS services. Please double-check this by going to the AWS UI S3, EC2, EMR, & Redshift consoles.
+
+## Contributing
+
+Contributions are welcome. If you would like to contribute you can help by opening a Github issue or putting up a PR.
