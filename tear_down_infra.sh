@@ -33,6 +33,7 @@ EMR_CLUSTER_ID=$(aws emr list-clusters --active --query 'Clusters[?Name==`'$SERV
 aws emr terminate-clusters --cluster-ids $EMR_CLUSTER_ID >> tear_down.log
 
 echo "Deleting EC2 security group"
+sleep 60
 aws ec2 delete-security-group --group-id $EC2_SECURITY_GROUP_ID --output text >> tear_down.log
 
 echo "Terminating Redshift cluster "$SERVICE_NAME""
