@@ -15,7 +15,7 @@ echo "Reading infrastructure variables from infra_variables.txt"
 source infra_variables.txt
 
 echo "Creating bucket "$1""
-aws s3api create-bucket --acl public-read-write --bucket $1 --output text >> setup.log
+aws s3api create-bucket --acl public-read-write --region $AWS_REGION --bucket $1 --output text >> setup.log
 
 echo '{
   "Version": "2012-10-17",
