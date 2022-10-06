@@ -39,7 +39,8 @@
 version: '3'
 x-airflow-common:
   &airflow-common
-  image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.1.0}
+  build:
+    context: ./containers/airflow/
   environment:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
@@ -49,16 +50,19 @@ x-airflow-common:
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__API__AUTH_BACKEND: 'airflow.api.auth.backend.basic_auth'
     AIRFLOW_CONN_POSTGRES_DEFAULT: postgres://airflow:airflow@postgres:5432/airflow
-    # AWS_SHARED_CREDENTIALS_FILE: /opt/airflow/.aws/credentials
-    # NOT RECOMMENDED FOR PRODUCTION!!!
-    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:- black flake8 mypy isort moto[all] pytest pytest-mock apache-airflow-client}
+    AIRFLOW_CONN_REDSHIFT: ${AIRFLOW_CONN_REDSHIFT}
+    AIRFLOW_CONN_AWS_DEFAULT: ${AIRFLOW_CONN_AWS_DEFAULT}
+    AIRFLOW_VAR_EMR_ID: ${AIRFLOW_VAR_EMR_ID}
+    AIRFLOW_VAR_BUCKET: ${AIRFLOW_VAR_BUCKET}
   volumes:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
-    - ./test:/opt/airflow/test
+    - ./tests:/opt/airflow/tests
     - ./data:/opt/airflow/data
     - ./temp:/opt/airflow/temp
+    - ./migrations:/opt/airflow/migrations
+    - ./spectrum_tables:/opt/airflow/spectrum_tables
   user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-50000}"
   depends_on:
     postgres:
@@ -76,6 +80,7 @@ services:
       - ./data:/input_data
       - ./temp:/temp
       - ./pgsetup:/docker-entrypoint-initdb.d
+      - ./spectrum_tables:/opt/airflow/spectrum_tables
     healthcheck:
       test: [ "CMD", "pg_isready", "-U", "airflow" ]
       interval: 5s

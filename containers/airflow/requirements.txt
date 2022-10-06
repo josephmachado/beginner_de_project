@@ -1,0 +1,9 @@
+black==22.8.0
+flake8==5.0.4
+mypy==0.971
+isort==5.10.1
+moto[all]==4.0.6
+pytest==7.0.1
+pytest-mock==3.6.1
+apache-airflow-client==2.3.0
+yoyo-migrations==8.0.0

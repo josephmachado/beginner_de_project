@@ -1,7 +1,7 @@
 import json
 from datetime import datetime, timedelta
 
-from utils import _local_to_s3, run_redshift_external_query
+from utils.utils import _local_to_s3, run_redshift_external_query
 
 from airflow import DAG
 from airflow.contrib.operators.emr_add_steps_operator import (

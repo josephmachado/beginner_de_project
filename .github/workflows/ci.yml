@@ -1,0 +1,12 @@
+name: ci
+on: [pull_request]
+jobs:
+  run-ci-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v2
+      - name: Spin up containers
+        run: make up
+      - name: Run CI test
+        run: make ci
