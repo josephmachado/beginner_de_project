@@ -7,10 +7,10 @@ docker-spin-up:
 	docker compose  --env-file env up airflow-init && docker compose --env-file env up --build -d
 
 docker-perms:
-	docker exec webserver chmod -R u=rwx,g=rwx,o=rwx logs plugins temp
+	docker exec webserver sudo chmod -R u=rwx,g=rwx,o=rwx logs plugins temp
 
 docker-perms-scheduler:
-	docker exec scheduler chmod -R u=rwx,g=rwx,o=rwx logs plugins temp
+	docker exec scheduler sudo chmod -R u=rwx,g=rwx,o=rwx logs plugins temp
 
 up: get-data docker-spin-up docker-perms docker-perms-scheduler
 
