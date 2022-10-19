@@ -6,13 +6,10 @@ get-data:
 docker-spin-up:
 	docker compose  --env-file env up airflow-init && docker compose --env-file env up --build -d
 
-docker-perms:
-	docker exec webserver sudo chmod -R u=rwx,g=rwx,o=rwx logs plugins temp
+perms:
+	sudo chmod -R u=rwx,g=rwx,o=rwx ./beginner_de_project && mkdir logs plugins temp && sudo chmod -R u=rwx,g=rwx,o=rwx logs plugins temp
 
-docker-perms-scheduler:
-	docker exec scheduler sudo chmod -R u=rwx,g=rwx,o=rwx logs plugins temp
-
-up: get-data docker-spin-up docker-perms docker-perms-scheduler
+up: get-data docker-spin-up
 
 down:
 	docker compose down

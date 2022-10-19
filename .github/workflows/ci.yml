@@ -6,6 +6,8 @@ jobs:
     steps:
       - name: checkout repo
         uses: actions/checkout@v2
+      - name: Grant perms
+        uses: make perms
       - name: Spin up containers
         run: make up
       - name: Run CI test
