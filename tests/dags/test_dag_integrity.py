@@ -3,7 +3,6 @@ import importlib.util
 import os
 
 import pytest
-
 from airflow.models import DAG
 from airflow.utils.dag_cycle_tester import check_cycle
 

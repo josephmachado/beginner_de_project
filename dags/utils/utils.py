@@ -1,7 +1,6 @@
 import os
 
 import psycopg2
-
 from airflow.hooks.postgres_hook import PostgresHook
 from airflow.hooks.S3_hook import S3Hook
 
