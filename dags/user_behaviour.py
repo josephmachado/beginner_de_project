@@ -1,6 +1,9 @@
 import json
 from datetime import datetime, timedelta
 
+from utils.utils import _local_to_s3, run_redshift_external_query
+
+from airflow import DAG
 from airflow.contrib.operators.emr_add_steps_operator import (
     EmrAddStepsOperator,
 )
@@ -9,9 +12,6 @@ from airflow.models import Variable
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.postgres_operator import PostgresOperator
 from airflow.operators.python import PythonOperator
-from utils.utils import _local_to_s3, run_redshift_external_query
-
-from airflow import DAG
 
 # Config
 BUCKET_NAME = Variable.get("BUCKET")

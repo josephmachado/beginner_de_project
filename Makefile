@@ -6,13 +6,13 @@ get-data:
 docker-spin-up:
 	docker compose  --env-file env up airflow-init && docker compose --env-file env up --build -d
 
-airflow-user-id:
-	docker exec webserver echo -e "AIRFLOW_UID=50000\nAIRFLOW_GID=0" > .env
+docker-perms:
+	docker exec webserver chmod -R u=rwx,g=rwx,o=rwx logs plugins temp
 
-airflow-user-id-scheduler:
-	docker exec scheduler echo -e "AIRFLOW_UID=50000\nAIRFLOW_GID=0" > .env
+docker-perms-scheduler:
+	docker exec scheduler chmod -R u=rwx,g=rwx,o=rwx logs plugins temp
 
-up: get-data docker-spin-up airflow-user-id airflow-user-id-scheduler
+up: get-data docker-spin-up docker-perms docker-perms-scheduler
 
 down:
 	docker compose down
