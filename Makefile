@@ -17,19 +17,19 @@ sh:
 ####################################################################################################################
 # Testing, auto formatting, type checks, & Lint checks
 pytest:
-	docker exec -ti webserver pytest -p no:warnings -v /opt/airflow/tests
+	docker exec webserver pytest -p no:warnings -v /opt/airflow/tests
 
 format:
-	docker exec -ti webserver python -m black -S --line-length 79 .
+	docker exec webserver python -m black -S --line-length 79 .
 
 isort:
-	docker exec -ti webserver isort .
+	docker exec webserver isort .
 
 type:
-	docker exec -ti webserver mypy --ignore-missing-imports /opt/airflow
+	docker exec webserver mypy --ignore-missing-imports /opt/airflow
 
 lint: 
-	docker exec -ti webserver flake8 /opt/airflow/dags
+	docker exec webserver flake8 /opt/airflow/dags
 
 ci: isort format type lint pytest
 

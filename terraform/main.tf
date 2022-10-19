@@ -74,6 +74,10 @@ resource "aws_iam_role" "sde_redshift_iam_role" {
 
 # Create security group for access to EC2 from your IP
 
+data "external" "myipaddr" {
+  program = ["bash", "-c", "curl -s 'https://ipinfo.io/json'"]
+}
+
 resource "aws_security_group" "sde_security_group" {
   name        = "sde_security_group"
   description = "Security group to allow inbound SCP & outbound 8080 (Airflow) connections"
@@ -83,7 +87,7 @@ resource "aws_security_group" "sde_security_group" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [format("%s/%s", "", 32)]
+    cidr_blocks = [format("%s/%s", "${data.external.myipaddr.result.ip}", 32)]
   }
 
   egress { # make this only 8080 TPC port
