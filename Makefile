@@ -17,6 +17,8 @@ down:
 sh:
 	docker exec -ti webserver bash
 
+psy:
+	touch psy
 ####################################################################################################################
 # Testing, auto formatting, type checks, & Lint checks
 pytest:
