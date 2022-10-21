@@ -92,6 +92,13 @@ resource "aws_security_group" "sde_security_group" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  egress { # make this only 8080 TPC port
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   tags = {
     Name = "sde_security_group"
   }
@@ -99,11 +106,15 @@ resource "aws_security_group" "sde_security_group" {
 
 #Set up EMR
 resource "aws_emr_cluster" "sde_emr_cluster" {
-  name                = "sde_emr_cluster"
-  release_label       = "emr-6.2.0"
-  applications        = ["Spark", "Hadoop"]
-  scale_down_behavior = "TERMINATE_AT_TASK_COMPLETION"
-  service_role        = "EMR_DefaultRole"
+  name                   = "sde_emr_cluster"
+  release_label          = "emr-6.2.0"
+  applications           = ["Spark", "Hadoop"]
+  scale_down_behavior    = "TERMINATE_AT_TASK_COMPLETION"
+  service_role           = "EMR_DefaultRole"
+  termination_protection = false
+  auto_termination_policy {
+    idle_timeout = var.auto_termination_timeoff
+  }
 
   ec2_attributes {
     instance_profile = aws_iam_instance_profile.sde_ec2_iam_role_instance_profile.id
@@ -249,20 +260,9 @@ EOF
 }
 
 # Setting as budget monitor, so we don't go over 20USD per month
-resource "aws_budgets_budget" "ec2" {
-  name              = "budget-ec2-monthly"
-  budget_type       = "COST"
-  limit_amount      = "20"
-  limit_unit        = "USD"
-  time_period_end   = "2087-06-15_00:00"
-  time_period_start = "2022-10-20_00:00"
-  time_unit         = "MONTHLY"
-
-  notification {
-    comparison_operator        = "GREATER_THAN"
-    threshold                  = 100
-    threshold_type             = "PERCENTAGE"
-    notification_type          = "FORECASTED"
-    subscriber_email_addresses = ["joseph.machado@startdataengineering.com"]
-  }
+resource "aws_budgets_budget" "cost" {
+  budget_type  = "COST"
+  limit_amount = "10"
+  limit_unit   = "USD"
+  time_unit    = "MONTHLY"
 }

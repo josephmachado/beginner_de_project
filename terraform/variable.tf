@@ -21,3 +21,9 @@ variable "instance_type" {
   type        = string
   default     = "m4.xlarge"
 }
+
+variable "auto_termination_timeoff" {
+  description = "Auto EMR termination time(in idle seconds)"
+  type        = number
+  default     = 14400 # 4 hours
+}
