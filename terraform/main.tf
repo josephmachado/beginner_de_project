@@ -259,7 +259,7 @@ EOF
 
 }
 
-# Setting as budget monitor, so we don't go over 20USD per month
+# Setting as budget monitor, so we don't go over 10USD per month
 resource "aws_budgets_budget" "cost" {
   budget_type  = "COST"
   limit_amount = "10"
