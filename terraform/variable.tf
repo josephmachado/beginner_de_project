@@ -9,3 +9,15 @@ variable "bucket_prefix" {
   type        = string
   default     = "sde-data-lake-"
 }
+
+variable "key_name" {
+  description = "EC2 key name"
+  type        = string
+  default     = "sde-key"
+}
+
+variable "instance_type" {
+  description = "Instance type for EMR and EC2"
+  type        = string
+  default     = "m4.xlarge"
+}

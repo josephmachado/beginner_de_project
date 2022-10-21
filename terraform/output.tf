@@ -24,8 +24,19 @@ output "redshift_password" {
   value       = "sdeP0ssword0987"
 }
 
-
 output "ec2_public_dns" {
   description = "EC2 public dns."
   value       = aws_instance.sde_ec2.public_dns
+}
+
+
+output "private_key" {
+  description = "EC2 private key."
+  value       = tls_private_key.example.private_key_pem
+  sensitive   = true
+}
+
+output "public_key" {
+  description = "EC2 public key."
+  value       = tls_private_key.example.public_key_openssh
 }

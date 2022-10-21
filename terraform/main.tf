@@ -72,12 +72,7 @@ resource "aws_iam_role" "sde_redshift_iam_role" {
   managed_policy_arns = ["arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess", "arn:aws:iam::aws:policy/AWSGlueConsoleFullAccess"]
 }
 
-# Create security group for access to EC2 from your IP
-
-data "external" "myipaddr" {
-  program = ["bash", "-c", "curl -s 'https://ipinfo.io/json'"]
-}
-
+# Create security group for access to EC2 from your Anywhere
 resource "aws_security_group" "sde_security_group" {
   name        = "sde_security_group"
   description = "Security group to allow inbound SCP & outbound 8080 (Airflow) connections"
@@ -87,7 +82,7 @@ resource "aws_security_group" "sde_security_group" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [format("%s/%s", "${data.external.myipaddr.result.ip}", 32)]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress { # make this only 8080 TPC port
@@ -116,7 +111,7 @@ resource "aws_emr_cluster" "sde_emr_cluster" {
 
 
   master_instance_group {
-    instance_type  = "m4.xlarge"
+    instance_type  = var.instance_type
     instance_count = 1
     name           = "Master - 1"
 
@@ -128,7 +123,7 @@ resource "aws_emr_cluster" "sde_emr_cluster" {
   }
 
   core_instance_group {
-    instance_type  = "m4.xlarge"
+    instance_type  = var.instance_type
     instance_count = 2
     name           = "Core - 2"
 
@@ -166,23 +161,47 @@ resource "redshift_schema" "external_from_glue_data_catalog" {
   name  = "spectrum"
   owner = "sde_user"
   external_schema {
-    database_name = "spectrum" # Required. Name of the db in glue catalog
+    database_name = "spectrum"
     data_catalog_source {
-      region = var.aws_region # Optional. If not specified, Redshift will use the same region as the cluster.
-      iam_role_arns = [
-        # Required. Must be at least 1 ARN and not more than 10.
-        aws_iam_role.sde_redshift_iam_role.arn
-      ]
-      create_external_database_if_not_exists = true # Optional. Defaults to false.
+      region                                 = var.aws_region
+      iam_role_arns                          = [aws_iam_role.sde_redshift_iam_role.arn]
+      create_external_database_if_not_exists = true
     }
   }
 }
 
 # Create EC2 with IAM role to allow EMR, Redshift, & S3 access and security group 
-resource "aws_instance" "sde_ec2" {
-  ami           = "ami-09d56f8956ab235b3" # us-east-1
-  instance_type = "m4.xlarge"
+resource "tls_private_key" "custom_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
 
+resource "aws_key_pair" "generated_key" {
+  key_name_prefix = var.key_name
+  public_key      = tls_private_key.custom_key.public_key_openssh
+}
+
+data "aws_ami" "ubuntu" {
+  most_recent = true
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-20220420"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+
+  owners = ["099720109477"] # Canonical
+}
+
+resource "aws_instance" "sde_ec2" {
+  ami           = data.aws_ami.ubuntu.id
+  instance_type = var.instance_type
+
+  key_name             = aws_key_pair.generated_key.key_name
   security_groups      = [aws_security_group.sde_security_group.name]
   iam_instance_profile = aws_iam_instance_profile.sde_ec2_iam_role_instance_profile.id
   tags = {
@@ -227,6 +246,23 @@ echo "-------------------------END DOCKER SETUP---------------------------"
 
 EOF
 
-  key_name = "sde"
 }
 
+# Setting as budget monitor, so we don't go over 20USD per month
+resource "aws_budgets_budget" "ec2" {
+  name              = "budget-ec2-monthly"
+  budget_type       = "COST"
+  limit_amount      = "20"
+  limit_unit        = "USD"
+  time_period_end   = "2087-06-15_00:00"
+  time_period_start = "2022-10-20_00:00"
+  time_unit         = "MONTHLY"
+
+  notification {
+    comparison_operator        = "GREATER_THAN"
+    threshold                  = 100
+    threshold_type             = "PERCENTAGE"
+    notification_type          = "FORECASTED"
+    subscriber_email_addresses = ["joseph.machado@startdataengineering.com"]
+  }
+}
