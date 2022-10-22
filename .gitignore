@@ -80,5 +80,3 @@ override.tf.json
 terraform.rc
 Footer
 
-.terraform.lock.hcl
-

@@ -52,6 +52,9 @@ infra-config:
 spectrum-migration:
 	./spectrum_migrate.sh
 
+db-migration:
+	@read -p "Enter migration name:" migration_name; docker exec webserver yoyo new ./migrations -m "$$migration_name"
+
 redshift-migration:
 	docker exec -ti webserver yoyo apply --no-config-file --database redshift://$$(terraform -chdir=./terraform output -raw redshift_user):$$(terraform -chdir=./terraform output -raw redshift_password)@$$(terraform -chdir=./terraform output -raw redshift_dns_name):5439/dev ./migrations
 
