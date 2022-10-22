@@ -29,8 +29,7 @@ resource "aws_s3_bucket_acl" "sde-data-lake-acl" {
   acl    = "public-read-write"
 }
 
-# Create IAM role 
-
+# IAM role for EC2 to connect to AWS Redshift, S3, & EMR
 resource "aws_iam_role" "sde_ec2_iam_role" {
   name = "sde_ec2_iam_role"
   assume_role_policy = jsonencode({
@@ -54,6 +53,7 @@ resource "aws_iam_instance_profile" "sde_ec2_iam_role_instance_profile" {
   role = aws_iam_role.sde_ec2_iam_role.name
 }
 
+# IAM role for Redshift to be able to read data from S3 via Spectrum
 resource "aws_iam_role" "sde_redshift_iam_role" {
   name = "sde_redshift_iam_role"
   assume_role_policy = jsonencode({
@@ -85,14 +85,14 @@ resource "aws_security_group" "sde_security_group" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  egress { # make this only 8080 TPC port
+  egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  egress { # make this only 8080 TPC port
+  egress {
     from_port   = 8080
     to_port     = 8080
     protocol    = "tcp"
@@ -149,10 +149,10 @@ resource "aws_emr_cluster" "sde_emr_cluster" {
 # Set up Redshift
 resource "aws_redshift_cluster" "sde_redshift_cluster" {
   cluster_identifier  = "sde-redshift-cluster"
-  master_username     = "sde_user"
-  master_password     = "sdeP0ssword0987"
+  master_username     = var.redshift_user
+  master_password     = var.redshift_password
   port                = 5439
-  node_type           = "dc2.large"
+  node_type           = var.redshift_node_type
   cluster_type        = "single-node"
   iam_roles           = [aws_iam_role.sde_redshift_iam_role.arn]
   skip_final_snapshot = true
@@ -161,16 +161,15 @@ resource "aws_redshift_cluster" "sde_redshift_cluster" {
 # Create Redshift spectrum schema
 provider "redshift" {
   host     = aws_redshift_cluster.sde_redshift_cluster.dns_name
-  username = "sde_user"
-  password = "sdeP0ssword0987"
+  username = var.redshift_user
+  password = var.redshift_password
   database = "dev"
 }
-
 
 # External schema using AWS Glue Data Catalog
 resource "redshift_schema" "external_from_glue_data_catalog" {
   name  = "spectrum"
-  owner = "sde_user"
+  owner = var.redshift_user
   external_schema {
     database_name = "spectrum"
     data_catalog_source {
@@ -222,7 +221,7 @@ resource "aws_instance" "sde_ec2" {
   user_data = <<EOF
 #!/bin/bash
 
-echo "-------------------------START DOCKER SETUP---------------------------"
+echo "-------------------------START AIRFLOW SETUP---------------------------"
 sudo apt-get -y update
 
 sudo apt-get -y install \
@@ -245,21 +244,28 @@ sudo chmod 666 /var/run/docker.sock
 
 sudo apt install make
 
-cd /home/ubuntu && git clone https://github.com/josephmachado/beginner_de_project.git && cd beginner_de_project && git checkout SDE-20221006-infra-setup-improvements && cd .. && sudo chmod -R u=rwx,g=rwx,o=rwx ./beginner_de_project 
+echo 'Clone git repo to EC2'
+cd /home/ubuntu && git clone https://github.com/josephmachado/beginner_de_project.git && cd beginner_de_project && git checkout SDE-20221006-infra-setup-improvements && make perms
 
-cd beginner_de_project && echo "AIRFLOW_CONN_REDSHIFT=postgres://sde_user:sdeP0ssword0987@${aws_redshift_cluster.sde_redshift_cluster.endpoint}/dev" > env && echo "AIRFLOW_CONN_POSTGRES_DEFAULT=postgres://airflow:airflow@localhost:5439/airflow" >> env && echo "AIRFLOW_CONN_AWS_DEFAULT=aws://?region_name=${var.aws_region}" >> env && echo "AIRFLOW_VAR_EMR_ID=${aws_emr_cluster.sde_emr_cluster.id}" >> env && echo "AIRFLOW_VAR_BUCKET=${aws_s3_bucket.sde-data-lake.id}" >> env
+echo 'Setup Airflow environment variables'
+echo "
+AIRFLOW_CONN_REDSHIFT=postgres://${var.redshift_user}:${var.redshift_password}@${aws_redshift_cluster.sde_redshift_cluster.endpoint}/dev
+AIRFLOW_CONN_POSTGRES_DEFAULT=postgres://airflow:airflow@localhost:5439/airflow
+AIRFLOW_CONN_AWS_DEFAULT=aws://?region_name=${var.aws_region}
+AIRFLOW_VAR_EMR_ID=${aws_emr_cluster.sde_emr_cluster.id}
+AIRFLOW_VAR_BUCKET=${aws_s3_bucket.sde-data-lake.id}
+" > env
 
-echo "Spinning up the docker containers"
-mkdir logs plugins temp && sudo chmod -R u=rwx,g=rwx,o=rwx logs plugins temp
-cd /home/ubuntu/beginner_de_project && sleep 120 && sudo make up
+echo 'Start Airflow containers'
+make up
 
-echo "-------------------------END DOCKER SETUP---------------------------"
+echo "-------------------------END AIRFLOW SETUP---------------------------"
 
 EOF
 
 }
 
-# Setting as budget monitor, so we don't go over 10USD per month
+# Setting as budget monitor, so we don't go over 10 USD per month
 resource "aws_budgets_budget" "cost" {
   budget_type  = "COST"
   limit_amount = "10"
