@@ -63,7 +63,15 @@ make cloud-airflow # this command will forward Airflow port from EC2 to your mac
 # the user name and password are both airflow
 
 make cloud-metabase # this command will forward Metabase port from EC2 to your machine and opens it in the browser
-# use https://github.com/josephmachado/data_engineering_project_template/blob/main/env file to connect to the warehouse from metabase
+```
+
+To get Redshift connection credentials for `metabase`  use these commands.
+
+```bash
+make infra-config
+# use redshift_dns_name as host
+# use redshift_user & redshift_password
+# dev as database
 ```
 
 Since we cannot replicate AWS components locally, we have not set them up here. To learn more about how to set up components locally [read this article](https://www.startdataengineering.com/post/setting-up-e2e-tests/)
