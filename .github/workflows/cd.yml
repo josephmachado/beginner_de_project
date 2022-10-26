@@ -1,0 +1,17 @@
+name: CD
+on:
+  push:
+    branches:
+      - main
+jobs:
+  deploy-to-ec2:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to server
+        uses: easingthemes/ssh-deploy@main
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          SOURCE: "./"
+          TARGET: "/home/ubuntu/beginner_de_project"
