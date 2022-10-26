@@ -38,6 +38,9 @@ ci: isort format type lint pytest
 
 ####################################################################################################################
 # Set up cloud infrastructure
+tf-init:
+	terraform -chdir=./terraform init
+
 infra-up:
 	terraform -chdir=./terraform apply
 
