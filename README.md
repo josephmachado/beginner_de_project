@@ -76,6 +76,20 @@ make infra-config
 
 Since we cannot replicate AWS components locally, we have not set them up here. To learn more about how to set up components locally [read this article](https://www.startdataengineering.com/post/setting-up-e2e-tests/)
 
+Create [database migrations](https://www.startdataengineering.com/post/data-engineering-projects-with-free-template/#43-database-migrations) as shown below.
+
+```shell
+make db-migration # enter a description, e.g., create some schema
+# make your changes to the newly created file under ./migrations
+make redshift-migration # to run the new migration on your warehouse
+```
+
+For the [continuous delivery](https://github.com/josephmachado/beginner_de_project/blob/master/.github/workflows/cd.yml) to work, set up the infrastructure with terraform, & defined the following repository secrets. You can set up the repository secrets by going to `Settings > Secrets > Actions > New repository secret`.
+
+1. **`SERVER_SSH_KEY`**: We can get this by running `terraform -chdir=./terraform output -raw private_key` in the project directory and paste the entire content in a new Action secret called SERVER_SSH_KEY.
+2. **`REMOTE_HOST`**: Get this by running `terraform -chdir=./terraform output -raw ec2_public_dns` in the project directory.
+3. **`REMOTE_USER`**: The value for this is **ubuntu**.
+
 We have a dag validity test defined [here](test/dag/test_dag_validity.py).
 
 ### Tear down infra
