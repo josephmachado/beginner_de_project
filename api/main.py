@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from models import RecommendRequest
 
 from elasticsearch import Elasticsearch
-from utils import get_similar
+from utils import get_recommendation
 
 ES_HOST = os.env['ES_HOST']
 ES_PORT = os.env['ES_PORT']
@@ -17,7 +17,7 @@ def get_es():
 @app.post("/recommend_product")
 def recommend_product(recommend_request: RecommendRequest):
     es = get_es()
-    product, recs = get_similar(es, recommend_request.id, num=recommend_request.rec_num, index='products')
+    product, recs = get_recommendation(es, recommend_request.id, num=recommend_request.rec_num, index='products')
     recommendations = []
     for rec in recs:
         r = {}
