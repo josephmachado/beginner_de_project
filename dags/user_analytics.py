@@ -5,6 +5,7 @@ from airflow.decorators import task
 from airflow.providers.amazon.aws.operators.s3 import S3CreateBucketOperator
 from airflow.providers.amazon.aws.transfers.local_to_s3 import \
     LocalFilesystemToS3Operator
+from airflow.providers.amazon.aws.transfers.sql_to_s3 import SqlToS3Operator
 
 with DAG(
     "user_analytics_dag",
@@ -25,11 +26,21 @@ with DAG(
     create_s3_bucket = S3CreateBucketOperator(
         task_id="create_s3_bucket", bucket_name=user_analytics_bucket
     )
-    create_local_to_s3_job = LocalFilesystemToS3Operator(
+    movie_review_to_s3 = LocalFilesystemToS3Operator(
         task_id="create_local_to_s3_job",
         filename="/opt/airflow/data/movie_review.csv",
-        dest_key="movie_review.csv",
+        dest_key="raw/movie_review.csv",
         dest_bucket=user_analytics_bucket,
         replace=True,
     )
-    create_s3_bucket >> create_local_to_s3_job
+
+    user_purchase_to_s3 = SqlToS3Operator(
+        task_id="database_to_s3",
+        sql_conn_id="postgres_default",
+        query="select * from retail.user_purchase",
+        s3_bucket=user_analytics_bucket,
+        s3_key="raw/user_purchase",
+        replace=True,
+    )
+
+    create_s3_bucket >> [movie_review_to_s3, user_purchase_to_s3]
