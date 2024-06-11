@@ -17,7 +17,6 @@ x-airflow-common:
     # AWS_DEFAULT_REGION: us-east-1
     # AWS_ENDPOINT_URL: http://minio:9001
     # AIRFLOW_CONN_AWS_DEFAULT: aws://minio:minio123@us-east-1?host=http://minio:9000
-
   volumes:
     - ./dags:/opt/airflow/dags
     - ./data:/opt/airflow/data
@@ -121,6 +120,7 @@ services:
       - "9090:8080"
       - "7077:7077"
       - "3000:3000"
+      - "2222:22"
     env_file:
       - .env.spark
 
@@ -136,6 +136,16 @@ services:
       - spark-logs:/opt/spark/spark-events
     ports:
       - '18080:18080'
+
+  spark-worker:
+    image: spark-image
+    entrypoint: ['./entrypoint.sh', 'worker']
+    volumes:
+      - ./capstone:/opt/spark/work-dir/capstone
+      - ./data-processing-spark:/opt/spark/work-dir/data-processing-spark
+      - spark-logs:/opt/spark/spark-events
+    env_file:
+      - .env.spark
 
 volumes:
   spark-logs:

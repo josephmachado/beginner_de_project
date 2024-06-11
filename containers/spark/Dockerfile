@@ -28,6 +28,21 @@ RUN chmod u+x /opt/spark/sbin/* && \
 
 ENV PYTHONPATH=$SPARK_HOME/python/:$PYTHONPATH
 
+
+# Install OpenSSH Server
+RUN apt-get update && apt-get install -y openssh-server
+
+# Create SSH directory and set permissions
+RUN mkdir /var/run/sshd
+
+# Enable password authentication
+RUN sed -i 's/#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config && \
+    sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+# Expose SSH port
+EXPOSE 22
+
+# Start SSH service
+CMD ["/usr/sbin/sshd", "-D"]
 COPY entrypoint.sh .
 
 ENTRYPOINT ["./entrypoint.sh"]

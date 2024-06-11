@@ -7,3 +7,8 @@ RUN cd / && bash /quarto.sh
 
 COPY setup_conn.py $AIRFLOW_HOME
 RUN python $AIRFLOW_HOME/setup_conn.py
+
+User root
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    default-jdk

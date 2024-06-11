@@ -29,3 +29,32 @@ command = [
 ]
 # Execute the command
 subprocess.run(command)
+
+
+def add_airflow_connection():
+    connection_id = "spark_default"
+    connection_type = "spark"
+    host = "spark://spark-master:7077"
+    extra = '{"queue": "default"}'
+
+    cmd = [
+        "airflow",
+        "connections",
+        "add",
+        connection_id,
+        "--conn-type",
+        connection_type,
+        "--conn-host",
+        host,
+        "--conn-extra",
+        extra,
+    ]
+
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode == 0:
+        print(f"Successfully added {connection_id} connection")
+    else:
+        print(f"Failed to add {connection_id} connection: {result.stderr}")
+
+
+add_airflow_connection()
