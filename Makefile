@@ -2,7 +2,7 @@
 # Setup containers to run Airflow
 
 docker-spin-up:
-	docker compose build && docker compose up airflow-init && docker compose up --build -d --scale spark-worker=2
+	docker compose build && docker compose up airflow-init && docker compose up --build -d 
 
 perms:
 	sudo mkdir -p logs plugins temp dags tests migrations data visualization && sudo chmod -R u=rwx,g=rwx,o=rwx logs plugins temp dags tests migrations data visualization

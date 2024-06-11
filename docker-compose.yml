@@ -106,46 +106,46 @@ services:
       MINIO_SECRET_KEY: minio123
     command: server --console-address ":9001" /data
 
-  spark-master:
-    image: spark-image 
-    container_name: spark-master
-    entrypoint: ['./entrypoint.sh', 'master']
-    build:
-      context: ./containers/spark
-      dockerfile: Dockerfile 
-    volumes:
-      - spark-logs:/opt/spark/spark-events
-    ports:
-      - "4040:4040"
-      - "9090:8080"
-      - "7077:7077"
-      - "3000:3000"
-      - "2222:22"
-    env_file:
-      - .env.spark
-
-  spark-history-server:
-    container_name: spark-history
-    image: spark-image
-    entrypoint: ['./entrypoint.sh', 'history']
-    depends_on:
-      - spark-master
-    env_file:
-      - .env.spark
-    volumes:
-      - spark-logs:/opt/spark/spark-events
-    ports:
-      - '18080:18080'
-
-  spark-worker:
-    image: spark-image
-    entrypoint: ['./entrypoint.sh', 'worker']
-    volumes:
-      - ./capstone:/opt/spark/work-dir/capstone
-      - ./data-processing-spark:/opt/spark/work-dir/data-processing-spark
-      - spark-logs:/opt/spark/spark-events
-    env_file:
-      - .env.spark
-
-volumes:
-  spark-logs:
+#   spark-master:
+#     image: spark-image 
+#     container_name: spark-master
+#     entrypoint: ['./entrypoint.sh', 'master']
+#     build:
+#       context: ./containers/spark
+#       dockerfile: Dockerfile 
+#     volumes:
+#       - spark-logs:/opt/spark/spark-events
+#     ports:
+#       - "4040:4040"
+#       - "9090:8080"
+#       - "7077:7077"
+#       - "3000:3000"
+#       - "2222:22"
+#     env_file:
+#       - .env.spark
+#
+#   spark-history-server:
+#     container_name: spark-history
+#     image: spark-image
+#     entrypoint: ['./entrypoint.sh', 'history']
+#     depends_on:
+#       - spark-master
+#     env_file:
+#       - .env.spark
+#     volumes:
+#       - spark-logs:/opt/spark/spark-events
+#     ports:
+#       - '18080:18080'
+#
+#   spark-worker:
+#     image: spark-image
+#     entrypoint: ['./entrypoint.sh', 'worker']
+#     volumes:
+#       - ./capstone:/opt/spark/work-dir/capstone
+#       - ./data-processing-spark:/opt/spark/work-dir/data-processing-spark
+#       - spark-logs:/opt/spark/spark-events
+#     env_file:
+#       - .env.spark
+#
+# volumes:
+#   spark-logs:

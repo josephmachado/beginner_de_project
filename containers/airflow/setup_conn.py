@@ -32,22 +32,21 @@ subprocess.run(command)
 
 
 def add_airflow_connection():
-    connection_id = "spark_default"
+    connection_id = "spark-conn"
     connection_type = "spark"
-    host = "spark://spark-master:7077"
-    extra = '{"queue": "default"}'
-
+    host = "spark://192.168.0.1"
+    port = "7077"
     cmd = [
         "airflow",
         "connections",
         "add",
         connection_id,
-        "--conn-type",
-        connection_type,
         "--conn-host",
         host,
-        "--conn-extra",
-        extra,
+        "--conn-type",
+        connection_type,
+        "--conn-port",
+        port,
     ]
 
     result = subprocess.run(cmd, capture_output=True, text=True)
@@ -58,3 +57,7 @@ def add_airflow_connection():
 
 
 add_airflow_connection()
+
+# wget https://dlcdn.apache.org/spark/spark-3.5.1/spark-3.5.1-bin-hadoop3.tgz -o spark-3.5.1-bin-hadoop3.tgz
+# chmod 755 spark-3.5.1-bin-hadoop3.tgz
+# tar xvzf spark-3.5.1-bin-hadoop3.tgz
