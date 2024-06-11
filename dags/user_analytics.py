@@ -2,12 +2,13 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.decorators import task
+from airflow.operators.bash_operator import BashOperator
 from airflow.providers.amazon.aws.operators.s3 import S3CreateBucketOperator
-from airflow.providers.amazon.aws.transfers.local_to_s3 import (
-    LocalFilesystemToS3Operator,
-)
+from airflow.providers.amazon.aws.transfers.local_to_s3 import \
+    LocalFilesystemToS3Operator
 from airflow.providers.amazon.aws.transfers.sql_to_s3 import SqlToS3Operator
-from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
+from airflow.providers.apache.spark.operators.spark_submit import \
+    SparkSubmitOperator
 
 with DAG(
     "user_analytics_dag",
@@ -45,10 +46,15 @@ with DAG(
         replace=True,
     )
 
-    movie_classifier = SparkSubmitOperator(
-        task_id="python_job",
-        conn_id="spark-conn",
-        application="./dags/scripts/spark/simple.py",
+    # movie_classifier = SparkSubmitOperator(
+    #     task_id="python_job",
+    #     conn_id="spark-conn",
+    #     application="./dags/scripts/spark/random_text_classification.py",
+    # )
+
+    movie_classifier = BashOperator(
+        task_id="pyspark",
+        bash_command="python $AIRFLOW_HOME/dags/scripts/spark/random_text_classification.py",
     )
 
     create_s3_bucket >> [movie_review_to_s3, user_purchase_to_s3] >> movie_classifier
