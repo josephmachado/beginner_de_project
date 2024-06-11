@@ -4,3 +4,6 @@ RUN pip install --no-cache-dir -r /requirements.txt
 
 COPY quarto.sh /
 RUN cd / && bash /quarto.sh
+
+COPY setup_conn.py $AIRFLOW_HOME
+RUN python $AIRFLOW_HOME/setup_conn.py

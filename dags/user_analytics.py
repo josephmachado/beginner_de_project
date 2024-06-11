@@ -3,9 +3,8 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.decorators import task
 from airflow.providers.amazon.aws.operators.s3 import S3CreateBucketOperator
-from airflow.providers.amazon.aws.transfers.local_to_s3 import (
-    LocalFilesystemToS3Operator,
-)
+from airflow.providers.amazon.aws.transfers.local_to_s3 import \
+    LocalFilesystemToS3Operator
 
 with DAG(
     "user_analytics_dag",
@@ -23,6 +22,9 @@ with DAG(
     # process it and write to clean
 
     # DuckDB to pull data from clean and create a table
+    create_s3_bucket = S3CreateBucketOperator(
+        task_id="create_s3_bucket", bucket_name=user_analytics_bucket
+    )
     create_local_to_s3_job = LocalFilesystemToS3Operator(
         task_id="create_local_to_s3_job",
         filename="/opt/airflow/data/movie_review.csv",
@@ -30,4 +32,4 @@ with DAG(
         dest_bucket=user_analytics_bucket,
         replace=True,
     )
-    create_local_to_s3_job
+    create_s3_bucket >> create_local_to_s3_job
