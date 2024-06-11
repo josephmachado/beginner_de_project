@@ -15,8 +15,8 @@ x-airflow-common:
     # AWS_ACCESS_KEY_ID: minio
     # AWS_SECRET_ACCESS_KEY: minio123
     # AWS_DEFAULT_REGION: us-east-1
-    # AWS_ENDPOINT_URL: http://minio:9001
-    # AIRFLOW_CONN_AWS_DEFAULT: aws://minio:minio123@us-east-1?host=http://minio:9000
+    # AWS_ENDPOINT_URL: http://localhost:9001
+    AIRFLOW_CONN_AWS_DEFAULT: aws://minio:minio123@us-east-1?host=http://localhost:9000
 
   volumes:
     - ./dags:/opt/airflow/dags
