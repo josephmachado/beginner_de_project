@@ -26,7 +26,12 @@ This data engineering project, includes the following:
 
 ### Codespaces
 
-add: images
+Start a code spaces, run `make up`, wait until its ready and click on the link in the Port tab to see the AirflowUI.
+**Note**: Make sure to turn off your codespaces when you are done, you only have a limited amount of free codespace use.
+
+![Codespace](assets/images/cs1.png)
+![Codespace make up](assets/images/cs2.png)
+![Codespace Airflow UI](assets/images/cs3.png)
 
 ### Your Machine
 
