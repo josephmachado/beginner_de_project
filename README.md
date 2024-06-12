@@ -52,7 +52,7 @@ make ci # run checks and tests
 
 Open Airflow at [localhost:8080](http://localhost:8080) and sign in with username and password as `airflow`. Switch on the `user_analytics_dag` and it will start running.
 
-On completion, you can see the dashboard html rendered at[./dags/scripts/dashboard.html](./dags/scripts/dashboard.html).
+On completion, you can see the dashboard html rendered at[./dags/scripts/dashboard/dashboard.html](./dags/scripts/dashboard/dashboard.html).
 
 Read **[this post](https://www.startdataengineering.com/post/data-engineering-projects-with-free-template/)**, for information on setting up CI/CD, IAC(terraform), "make" commands and automated testing.
 
