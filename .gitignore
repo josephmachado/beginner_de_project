@@ -80,3 +80,4 @@ override.tf.json
 terraform.rc
 Footer
 
+dashboard_files/
