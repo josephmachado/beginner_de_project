@@ -20,7 +20,7 @@ This data engineering project, includes the following:
 3. **`DuckDB`**: To act as our warehouse
 4. **`Quarto with Plotly`**: To convert code in `markdown` format to html files that can be embedded in your app or servered as is.
 5. **`minio`**: To provide an S3 compatible open source storage system.
-6. **`Apache Spark`: To process our data, specifically to run a classification algorithm.
+6. **`Apache Spark`**: To process our data, specifically to run a classification algorithm.
 
 ## Run Data Pipeline
 
