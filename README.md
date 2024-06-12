@@ -24,6 +24,8 @@ This data engineering project, includes the following:
 
 ## Run Data Pipeline
 
+![Airflow DAG run](assets/images/dag.png)
+
 ### Codespaces
 
 Start a code spaces, run `make up`, wait until its ready and click on the link in the Port tab to see the AirflowUI.
