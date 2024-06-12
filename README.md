@@ -1,3 +1,10 @@
+
+* [Beginner DE Project - Batch Edition](#beginner-de-project---batch-edition)
+    * [Architecture](#architecture)
+    * [Run Data Pipeline](#run-data-pipeline)
+        * [Codespaces](#codespaces)
+        * [Your Machine](#your-machine)
+
 # Beginner DE Project - Batch Edition
 
 Code for blog at [Data Engineering Project for Beginners](https://www.startdataengineering.com/post/data-engineering-project-for-beginners-batch-edition/).
@@ -6,11 +13,14 @@ Code for blog at [Data Engineering Project for Beginners](https://www.startdatae
 
 ![Data pipeline design](assets/images/arch.png)
 
-We will be using Airflow to orchestrate
-1. Classifying movie reviews with Apache Spark.
-2. Loading the classified movie reviews into the data warehouse.
-3. Extract user purchase data from an OLTP database and load it into the data warehouse.
-4. Joining the classified movie review data and user purchase data to get `user behavior metric` data.
+This data engineering project, includes the following:
+
+1. **`Airflow`**: To schedule and orchestrate DAGs.
+2. **`Postgres`**: To store Airflow's details (which you can see via Airflow UI) and also has a schema to represent upstream databases.
+3. **`DuckDB`**: To act as our warehouse
+4. **`Quarto with Plotly`**: To convert code in `markdown` format to html files that can be embedded in your app or servered as is.
+5. **`minio`**: To provide an S3 compatible open source storage system.
+6. **`Apache Spark`: To process our data, specifically to run a classification algorithm.
 
 ## Run Data Pipeline
 
@@ -22,8 +32,6 @@ add: images
 
 1. [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 2. [Docker](https://docs.docker.com/engine/install/) with at least 4GB of RAM and [Docker Compose](https://docs.docker.com/compose/install/) v1.27.0 or later
-
-### See detailed explanation at [Data engineering project: Batch edition](https://www.startdataengineering.com/post/data-engineering-project-for-beginners-batch-edition)
 
 Clone the repo and run the make up command as shown here:
 
