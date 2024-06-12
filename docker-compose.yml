@@ -12,11 +12,6 @@ x-airflow-common:
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__API__AUTH_BACKEND: 'airflow.api.auth.backend.basic_auth'
     AIRFLOW_CONN_POSTGRES_DEFAULT: postgres://airflow:airflow@postgres:5432/airflow
-    # AWS_ACCESS_KEY_ID: minio
-    # AWS_SECRET_ACCESS_KEY: minio123
-    # AWS_DEFAULT_REGION: us-east-1
-    # AWS_ENDPOINT_URL: http://minio:9001
-    # AIRFLOW_CONN_AWS_DEFAULT: aws://minio:minio123@us-east-1?host=http://minio:9000
   volumes:
     - ./dags:/opt/airflow/dags
     - ./data:/opt/airflow/data
@@ -108,46 +103,3 @@ services:
       MINIO_ROOT_PASSWORD: minio123
     command: server --console-address ":9001" /data
 
-#   spark-master:
-#     image: spark-image 
-#     container_name: spark-master
-#     entrypoint: ['./entrypoint.sh', 'master']
-#     build:
-#       context: ./containers/spark
-#       dockerfile: Dockerfile 
-#     volumes:
-#       - spark-logs:/opt/spark/spark-events
-#     ports:
-#       - "4040:4040"
-#       - "9090:8080"
-#       - "7077:7077"
-#       - "3000:3000"
-#       - "2222:22"
-#     env_file:
-#       - .env.spark
-#
-#   spark-history-server:
-#     container_name: spark-history
-#     image: spark-image
-#     entrypoint: ['./entrypoint.sh', 'history']
-#     depends_on:
-#       - spark-master
-#     env_file:
-#       - .env.spark
-#     volumes:
-#       - spark-logs:/opt/spark/spark-events
-#     ports:
-#       - '18080:18080'
-#
-#   spark-worker:
-#     image: spark-image
-#     entrypoint: ['./entrypoint.sh', 'worker']
-#     volumes:
-#       - ./capstone:/opt/spark/work-dir/capstone
-#       - ./data-processing-spark:/opt/spark/work-dir/data-processing-spark
-#       - spark-logs:/opt/spark/spark-events
-#     env_file:
-#       - .env.spark
-#
-# volumes:
-#   spark-logs:
