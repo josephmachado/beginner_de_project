@@ -1,0 +1,73 @@
+---
+title: "CoinCap Exchange Dashboard"
+author: "StartDataEngineering"
+format: dashboard
+---
+
+## Row {height=70%}
+
+```{python}
+#| title: User Behaviour Metrics data analysis
+import pandas as pd
+import plotly.express as px
+import os
+# Load the CSV file
+file_path = f'{os.getenv("AIRFLOW_HOME")}/data/behaviour_metrics.csv'
+
+import duckdb as d
+d.sql(f"create table bm as SELECT * FROM '{file_path}'")
+
+# Query for average spending per customer
+avg_spent_query = "SELECT AVG(amount_spent) AS average_spent FROM bm;"
+average_spent = d.sql(avg_spent_query).fetchdf()
+
+# Plot for average spending
+fig_avg_spent = px.bar(average_spent, x=['Average Spending'], y='average_spent', title='Average Spending per Customer')
+fig_avg_spent.show()
+```
+
+## Row {height=30%}
+
+```{python}
+#| title: User Behaviour Metrics data analysis
+import pandas as pd
+import plotly.express as px
+import os
+# Load the CSV file
+file_path = f'{os.getenv("AIRFLOW_HOME")}/data/behaviour_metrics.csv'
+
+import duckdb as d
+d.sql(f"create table bm2 as SELECT * FROM '{file_path}'")
+
+# Query for spending distribution
+spending_dist_query = """
+WITH binned_data AS (
+    SELECT 
+        amount_spent,
+        CASE 
+            WHEN amount_spent < 10000 THEN '0-9999'
+            WHEN amount_spent >= 10000 AND amount_spent < 20000 THEN '10000-19999'
+            WHEN amount_spent >= 20000 AND amount_spent < 30000 THEN '20000-29999'
+            WHEN amount_spent >= 30000 AND amount_spent < 40000 THEN '30000-39999'
+            WHEN amount_spent >= 40000 AND amount_spent < 50000 THEN '40000-49999'
+            WHEN amount_spent >= 50000 AND amount_spent < 60000 THEN '50000-59999'
+            WHEN amount_spent >= 60000 AND amount_spent < 70000 THEN '60000-69999'
+            WHEN amount_spent >= 70000 AND amount_spent < 80000 THEN '70000-79999'
+            WHEN amount_spent >= 80000 AND amount_spent < 90000 THEN '80000-89999'
+            ELSE '90000+'
+        END AS spending_bin
+    FROM bm2
+)
+SELECT 
+    spending_bin,
+    COUNT(*) AS count
+FROM binned_data
+GROUP BY spending_bin
+ORDER BY spending_bin;
+"""
+spending_distribution = d.sql(spending_dist_query).fetchdf()
+
+# Plot for spending distribution
+fig_spending_dist = px.bar(spending_distribution, x='spending_bin', y='count', title='Spending Distribution')
+fig_spending_dist.show()
+```
