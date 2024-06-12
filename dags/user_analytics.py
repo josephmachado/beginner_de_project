@@ -105,11 +105,18 @@ with DAG(
         task_id="get_user_behaviour_metric",
         python_callable=create_user_behaviour_metric,
     )
-
+    
+    markdown_path = f'{os.getenv("AIRFLOW_HOME")}/dags/scripts/dashboard/'
+    q_cmd = (
+        f'cd {markdown_path} && quarto render {markdown_path}/dashboard.qmd'
+    )
+    gen_dashboard = BashOperator(
+        task_id="generate_dashboard", bash_command=q_cmd
+    )
     (
         create_s3_bucket
         >> [movie_review_to_s3, user_purchase_to_s3]
         >> movie_classifier
         >> [get_movie_review_to_warehouse, get_user_purchase_to_warehouse]
-        >> get_user_behaviour_metric
+        >> get_user_behaviour_metric >> gen_dashboard
     )
