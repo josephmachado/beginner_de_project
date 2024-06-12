@@ -20,7 +20,6 @@ x-airflow-common:
     - ./plugins:/opt/airflow/plugins
     - ./tests:/opt/airflow/tests
     - ./temp:/opt/airflow/temp
-    - ./migrations:/opt/airflow/migrations
   user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-50000}"
   depends_on:
     postgres:

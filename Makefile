@@ -5,7 +5,7 @@ docker-spin-up:
 	docker compose build && docker compose up airflow-init && docker compose up --build -d 
 
 perms:
-	sudo mkdir -p logs plugins temp dags tests migrations data visualization && sudo chmod -R u=rwx,g=rwx,o=rwx logs plugins temp dags tests migrations data visualization
+	sudo mkdir -p logs plugins temp dags tests data visualization && sudo chmod -R u=rwx,g=rwx,o=rwx logs plugins temp dags tests data visualization
 
 setup-conn:
 	docker exec scheduler python /opt/airflow/setup_conn.py
