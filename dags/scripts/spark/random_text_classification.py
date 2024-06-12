@@ -53,7 +53,7 @@ if __name__ == "__main__":
         "--output",
         type=str,
         help="HDFS output",
-        default="s3a://user-analytics/clean/movie_review.csv",
+        default="s3a://user-analytics/clean/movie_review",
     )
     parser.add_argument("--run-id", type=str, help="run id", default="2024-05-05")
     args = parser.parse_args()

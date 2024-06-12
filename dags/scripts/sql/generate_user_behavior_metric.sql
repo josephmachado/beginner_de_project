@@ -1,28 +1,7 @@
-DELETE FROM public.user_behavior_metric
-WHERE insert_date = '{{ ds }}';
-INSERT INTO public.user_behavior_metric (
-        customerid,
-        amount_spent,
-        review_score,
-        review_count,
-        insert_date
-    )
-SELECT ups.customerid,
-    CAST(
-        SUM(ups.Quantity * ups.UnitPrice) AS DECIMAL(18, 5)
-    ) AS amount_spent,
-    SUM(mrcs.positive_review) AS review_score,
-    count(mrcs.cid) AS review_count,
-    '{{ ds }}'
-FROM spectrum.user_purchase_staging ups
-    JOIN (
-        SELECT cid,
-            CASE
-                WHEN positive_review IS True THEN 1
-                ELSE 0
-            END AS positive_review
-        FROM spectrum.classified_movie_review
-        WHERE insert_date = '{{ ds }}'
-    ) mrcs ON ups.customerid = mrcs.cid
-WHERE ups.insert_date = '{{ ds }}'
-GROUP BY ups.customerid;
+with up as ( select * from '/opt/airflow/temp/s3folder/raw/user
+_purchase/user_purchase.csv'), mr as (select * from '/opt/airflow/t
+emp/s3folder/clean/movie_review/*.parquet') select up.customer_id, 
+sum(up.quantity * up.unit_price) as amount_spent, sum(case when mr.
+positive_review then 1 else 0 end) as num_positive_reviews, count(m
+r.cid) as num_reviews from up join mr on up.customer_id = mr.cid gr
+oup by up.customer_id;
