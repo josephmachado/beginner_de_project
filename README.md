@@ -1,9 +1,10 @@
 
+
 * [Beginner DE Project - Batch Edition](#beginner-de-project---batch-edition)
-    * [Architecture](#architecture)
     * [Run Data Pipeline](#run-data-pipeline)
-        * [Codespaces](#codespaces)
-        * [Your Machine](#your-machine)
+        * [Run on codespaces](#run-on-codespaces)
+        * [Run locally](#run-locally)
+    * [Architecture](#architecture)
 
 # Beginner DE Project - Batch Edition
 
@@ -12,8 +13,6 @@ Code for blog at [Data Engineering Project for Beginners](https://www.startdatae
 ## Run Data Pipeline
 
 Code available at **[beginner_de_project](data_engineering_project_template)** repository.
-
-![Airflow DAG run](assets/images/dag.png)
 
 ### Run on codespaces
 
