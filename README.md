@@ -12,13 +12,13 @@ Code for blog at [Data Engineering Project for Beginners](https://www.startdatae
 
 ## Run Data Pipeline
 
-Code available at **[beginner_de_project](data_engineering_project_template)** repository.
+Code available at **[beginner_de_project](https://github.com/josephmachado/beginner_de_project)** repository.
 
 ### Run on codespaces
 
 You can run this data pipeline using GitHub codespaces. Follow the instructions below.
 
-1. Create codespaces by going to the **[data_engineering_project_template](https://github.com/josephmachado/data_engineering_project_template/tree/main?tab=readme-ov-file#data-engineering-project-template)** repository, cloning it(or click `Use this template` button) and then clicking on `Create codespaces on main` button.
+1. Create codespaces by going to the **[beginner_de_project](https://github.com/josephmachado/beginner_de_project)** repository, cloning it(or click `Use this template` button) and then clicking on `Create codespaces on main` button.
 2. Wait for codespaces to start, then in the terminal type `make up`.
 3. Wait for `make up` to complete, and then wait for 30s (for Airflow to start).
 4. After 30s go to the `ports` tab and click on the link exposing port `8080` to access Airflow UI (username and password is `airflow`).
