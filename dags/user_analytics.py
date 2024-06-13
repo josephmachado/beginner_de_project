@@ -14,7 +14,7 @@ from airflow.providers.amazon.aws.transfers.local_to_s3 import (
 from airflow.providers.amazon.aws.transfers.sql_to_s3 import SqlToS3Operator
 
 
-def get_s3_folder(s3_bucket, s3_folder, local_folder="./temp/s3folder/"):
+def get_s3_folder(s3_bucket, s3_folder, local_folder="/opt/airflow/temp/s3folder/"):
     # TODO: Move AWS credentials to env variables
     s3 = boto3.resource(
         service_name="s3",
@@ -123,9 +123,13 @@ with DAG(
 
     (
         create_s3_bucket
-        >> [movie_review_to_s3, user_purchase_to_s3]
+        >> user_purchase_to_s3
         >> movie_classifier
-        >> [get_movie_review_to_warehouse, get_user_purchase_to_warehouse]
+        >> get_user_purchase_to_warehouse
         >> get_user_behaviour_metric
-        >> gen_dashboard
+        >> gen_dashboard,
+        create_s3_bucket
+        >> movie_review_to_s3
+        >> get_movie_review_to_warehouse
+        >> get_user_behaviour_metric,
     )
