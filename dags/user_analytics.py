@@ -1,5 +1,6 @@
 import os
 import shutil
+import time
 from datetime import datetime, timedelta
 
 import boto3
@@ -84,6 +85,7 @@ with DAG(
     )
 
     def create_user_behaviour_metric():
+        time.sleep(30)
         q = """
         with up as (
           select 
@@ -121,15 +123,14 @@ with DAG(
     q_cmd = f"cd {markdown_path} && quarto render {markdown_path}/dashboard.qmd"
     gen_dashboard = BashOperator(task_id="generate_dashboard", bash_command=q_cmd)
 
+    create_s3_bucket >> [user_purchase_to_s3, movie_review_to_s3]
+
+    user_purchase_to_s3 >> movie_classifier >> get_user_purchase_to_warehouse
+
+    movie_review_to_s3 >> get_movie_review_to_warehouse
+
     (
-        create_s3_bucket
-        >> user_purchase_to_s3
-        >> movie_classifier
-        >> get_user_purchase_to_warehouse
+        [get_user_purchase_to_warehouse, get_movie_review_to_warehouse]
         >> get_user_behaviour_metric
-        >> gen_dashboard,
-        create_s3_bucket
-        >> movie_review_to_s3
-        >> get_movie_review_to_warehouse
-        >> get_user_behaviour_metric,
+        >> gen_dashboard
     )

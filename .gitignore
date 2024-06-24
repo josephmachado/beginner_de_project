@@ -29,7 +29,6 @@ __pycache__
 trust-policy.json
 
 # data
-data*
 
 # logs
 logs/*
