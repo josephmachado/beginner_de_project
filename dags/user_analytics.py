@@ -125,9 +125,9 @@ with DAG(
 
     create_s3_bucket >> [user_purchase_to_s3, movie_review_to_s3]
 
-    user_purchase_to_s3 >> movie_classifier >> get_user_purchase_to_warehouse
+    user_purchase_to_s3 >> get_user_purchase_to_warehouse
 
-    movie_review_to_s3 >> get_movie_review_to_warehouse
+    movie_review_to_s3 >> movie_classifier >> get_movie_review_to_warehouse
 
     (
         [get_user_purchase_to_warehouse, get_movie_review_to_warehouse]
