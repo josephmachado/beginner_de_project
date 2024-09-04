@@ -6,7 +6,9 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import array_contains, lit
 
 
-def random_text_classifier(input_loc: str, output_loc: str, run_id: str) -> None:
+def random_text_classifier(
+    input_loc: str, output_loc: str, run_id: str
+) -> None:
     """
     This is a dummy function to show how to use spark, It is supposed to mock
     the following steps
@@ -28,7 +30,9 @@ def random_text_classifier(input_loc: str, output_loc: str, run_id: str) -> None
     df_tokens = tokenizer.transform(df_raw).select("cid", "review_token")
 
     # Remove stop words
-    remover = StopWordsRemover(inputCol="review_token", outputCol="review_clean")
+    remover = StopWordsRemover(
+        inputCol="review_token", outputCol="review_clean"
+    )
     df_clean = remover.transform(df_tokens).select("cid", "review_clean")
 
     # function to check presence of good
@@ -55,7 +59,9 @@ if __name__ == "__main__":
         help="HDFS output",
         default="s3a://user-analytics/clean/movie_review",
     )
-    parser.add_argument("--run-id", type=str, help="run id", default="2024-05-05")
+    parser.add_argument(
+        "--run-id", type=str, help="run id", default="2024-05-05"
+    )
     args = parser.parse_args()
     spark = (
         SparkSession.builder.appName("efficient-data-processing-spark")
@@ -67,7 +73,10 @@ if __name__ == "__main__":
         .config("spark.hadoop.fs.s3a.secret.key", "minio123")
         .config("spark.hadoop.fs.s3a.endpoint", "http://minio:9000")
         .config("spark.hadoop.fs.s3a.region", "us-east-1")
-        .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
+        .config(
+            "spark.hadoop.fs.s3a.impl",
+            "org.apache.hadoop.fs.s3a.S3AFileSystem",
+        )
         .config("spark.hadoop.fs.s3a.path.style.access", "true")
         .getOrCreate()
     )

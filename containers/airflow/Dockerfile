@@ -22,7 +22,7 @@ RUN apt-get update && \
 # export PATH=$PATH:$JAVA_HOME/bin
 # export SPARK_HOME='/opt/spark'
 # export PATH=$PATH:$SPARK_HOME/bin:$SPARK_HOME/sbin
-RUN curl https://dlcdn.apache.org/spark/spark-3.5.1/spark-3.5.1-bin-hadoop3.tgz -o spark-3.5.1-bin-hadoop3.tgz
+RUN curl https://archive.apache.org/dist/spark/spark-3.5.1/spark-3.5.1-bin-hadoop3.tgz -o spark-3.5.1-bin-hadoop3.tgz
 
 # Change permissions of the downloaded tarball
 RUN chmod 755 spark-3.5.1-bin-hadoop3.tgz
