@@ -7,12 +7,12 @@ pytest==8.2.2
 pytest-mock==3.14.0
 apache-airflow-client==2.9.0
 yoyo-migrations==8.2.0
-duckdb==1.0.0
+duckdb==1.1.0
 plotly==5.22.0
 jupyter==1.0.0
 types-requests==2.32.0.20240602
 apache-airflow-providers-apache-spark==4.8.1
-duckdb==1.0.0
+duckdb==1.1.0
 plotly==5.22.0
 jupyter==1.0.0
 types-requests==2.32.0.20240602
